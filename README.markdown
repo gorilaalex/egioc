@@ -86,7 +86,7 @@ Aceste relatii trebuie in principiu verificate pentru fiecare punct al segmentul
 4.  ambele capete sunt in exteriorul ferestrei dar segmentul nu intersecteaza fereastra
 Planul utilizator este impartit in 9 regiuni carora li se asociaza cate un cod unic, format din 2 valori intregi (0 respectiv 1) conform figurii:
 
-![region codes](http://i39.tinypic.com/war5te.gif "CS Regional Segmentation")
+![region codes](http://i42.tinypic.com/r8b9ld.gif "CS Regional Segmentation")
 
 Descrierea algoritmului este urmatoarea:
 
@@ -110,3 +110,49 @@ Descrierea algoritmului este urmatoarea:
 
 Exemplu de utilizare: **lineout -f in.ps -w 200 -h 200 -wl 50 -wt 50 -wr 150 -wb 150 -o out.xpm**
 ![conversion example](http://i41.tinypic.com/34q441i.gif)
+
+## Lucrarea nr. 4: Transformări Grafice 2D ##
+#### Coordonate omogene. Matrici de transformare elementare ####
+Un punct din plan P(x, y) poate fi reprezentat ca un vector coloana:
+x = H1 / S
+y = H2 / S
+De obicei S = 1, deci x = H1, y=H2.
+
+Utilizand coordonatele omogene este posibila tratarea unitara a transformarilor elementare, reprezentate ca matrice de 3x3 elemente. In acest caz, transformarile vor avea forma:
+
+    H' = C * H
+    H' = (x' y' 1)t
+    H = (x y 1)t
+
+![Transform Matrix](http://i44.tinypic.com/2ext55y.gif "General Transform Matrix")
+
+**1. Translatia** transforma punctul P(x, y) in punctul P'(x', y') dupa modelul:
+
+![Translation Matrix](http://i39.tinypic.com/iciyrk.gif "General Translation Matrix")
+
+**2. Rotatia** in jurul originii transforma punctul P(x, y) in punctul P'(x', y') rotind vectorul de pozitie al punctului P, OP, in jurul originii cu un unghi t, in sens trigonometric:
+
+![Rotation Matrix](http://i43.tinypic.com/23r25n4.gif "General Rotation Matrix")
+
+**3. Scalarea** transforma punctul P(x, y) in punctul P'(x', y') după relaţiile:
+
+![Scaling Matrix](http://i43.tinypic.com/xf4u2q.gif "General Scaling Matrix")
+
+#### Cerinte ####
+Modificati aplicatia realizata in laboratorul 2 adugand facilitati de transformare a imaginii. Programul va accepta din linia de comanda un nou parametru:
+
+*  **-t nume_fisier** unde fisierul indicat va contine un set de transformari ce se vor aplica imaginii. 
+
+Exemplu de utilizare: **lineout -f in.ps -w 200 -h 200 -t transf.tsf -o out.xpm**
+
+*out.xpm* va contine imaginea compusa din sgmente de dreapta in fisierul *in.ps* supusa transformarilor indicate in *transf.tsf*
+
+Fisierele TSF sunt fisiere text ce contin un set de transformari. Transformarile ce vor fi tratate sunt : translatia, rotatia fata de un punct din plan, scalarea fata de un punct (**!!!Atentie!!! - rotatia si scalarea nu sunt relative la origine**).
+
+Structura fisierelor TSF - exemplu:
+
+    t tx ty - translatie in tx ty
+    s px py sx sy - scalare : P(px,py) este punctul fata de care se realizeaza scalarea; sx,sy sunt factorii de scalare
+    r px py u - rotatie : P(px,py) este punctul fata de care se realizeaza rotatia cu unghiul "u" 
+
+(**!!! Atentie unghiul se da in grade si nu in radiani**)
