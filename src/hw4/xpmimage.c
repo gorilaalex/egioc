@@ -180,37 +180,35 @@ trimLineToRegion(XPM *canvas, Point *start, Point *end, unsigned char codeStart,
     else code = codeStart;
 
     if(code & BIT0IS1)
-    {
-        newY = (*start).y + ((*end).y - (*start).y) * (canvas->displayRegion.windowLeft - (*start).x) / ((*end).x - (*start).x);
-        newX = canvas->displayRegion.windowLeft;
-    }
+      {
+	newY = (*start).y + ((*end).y - (*start).y) * (canvas->displayRegion.windowLeft - (*start).x) / ((*end).x - (*start).x);
+	newX = canvas->displayRegion.windowLeft;
+      }
     else if(code & BIT1IS1)
-    {
-        newY = (*start).y + ((*end).y - (*start).y) * (canvas->displayRegion.windowRight - (*start).x) / ((*end).x - (*start).x);
-        newX = canvas->displayRegion.windowRight;
-    }
+      {
+	newY = (*start).y + ((*end).y - (*start).y) * (canvas->displayRegion.windowRight - (*start).x) / ((*end).x - (*start).x);
+	newX = canvas->displayRegion.windowRight;
+      }
     else if(code & BIT2IS1)
-    {
-      newX = (*start).x + ((*end).x - (*start).x) * (canvas->displayRegion.windowBottom - (*start).y) / ((*end).y - (*start).y);
-        newY = canvas->displayRegion.windowBottom;
-
-    }
+      {
+	newX = (*start).x + ((*end).x - (*start).x) * (canvas->displayRegion.windowBottom - (*start).y) / ((*end).y - (*start).y);
+	newY = canvas->displayRegion.windowBottom;
+      }
     else if(code & BIT3IS1)
-    {
+      {
         newX = (*start).x + ((*end).x - (*start).x) * (canvas->displayRegion.windowTop - (*start).y) / ((*end).y - (*start).y);
         newY = canvas->displayRegion.windowTop;
-
-    }
+      }
     if (code == codeStart)
-    {
+      {
         (*start).x = newX;
         (*start).y = newY;
-    }
+      }
     else
-    {
+      {
         (*end).x = newX;
         (*end).y = newY;
-    }
+      }
 }
 
 int 

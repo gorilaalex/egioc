@@ -120,7 +120,7 @@ main(int argc, char *argv[]){
   psList = loadPSFile(img, psInput);
   /* apply the desired graphical transformations on the XPM structure */
   if(NULL != transformFile){
-    struct trans *gTransforms = loadTStructure(transformFile);
+    struct transf *gTransforms = loadTStructure(transformFile);
     applyTransforms(gTransforms, psList);
     freeTStrcuture(&gTransforms);
   }
