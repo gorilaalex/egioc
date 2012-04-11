@@ -7,10 +7,11 @@ typedef struct {
   int y;
 } Point;
 
-/* A simple-linked point list structure */
-struct SPointList {
+/* A double-linked point list structure */
+struct PointNode {
   Point pt;
-  struct SPointList *next;
+  struct PointNode *next;
+  struct PointNode *prev;
 };
 
 typedef enum {UNDEFINED_ELEMENT, BLANK, LINE, POINT, POLY} GElementType;
@@ -19,7 +20,7 @@ typedef enum {UNDEFINED_ELEMENT, BLANK, LINE, POINT, POLY} GElementType;
 typedef struct{
   union{
     Point point;
-    struct SPointList *poly;
+    struct PointNode *headPoint;
     struct{
       Point st;
       Point en;

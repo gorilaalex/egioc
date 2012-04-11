@@ -10,6 +10,8 @@ all: $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) main.c -o $(PRJNAME) $(LDFLAGS)
 hw4: all
 	./$(PRJNAME) -f test2.ps -w 200 -h 200 -t transf.tsf -o out.xpm
+hw5: all
+	./$(PRJNAME) -f in.pol -w 200 -h 200 -o out.xpm
 
 ./%.o: ./%.c
 	$(CC) -c $(CFLAGS) -o $@ $<
