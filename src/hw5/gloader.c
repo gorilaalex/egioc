@@ -5,8 +5,10 @@ loadFromFile(struct GENode **ellist, const char *file) {
   if(NULL != file) {
     if(strstr(file, ".ps") == (char *)(file + strlen(file) - 3))
       loadPS(ellist, file);
-    else if(strstr(file, ".pol") == (char *)(file + strlen(file) - 4))
+    else if(strstr(file, ".pol") == (char *)(file + strlen(file) - 4)) {
+      printf(" *** Loading poly from file\n");
       loadPOL(ellist, file);
+    }
   }
 }
 
@@ -90,6 +92,7 @@ loadPOL(struct GENode **ellist, const char *file) {
     while(!feof(fhandle) && fgets(fileLine, sizeof(fileLine), fhandle) != 0) {
       sscanf(fileLine, "%d %d", &readpt.x, &readpt.y);
       addPtNodeToList(&plastGNode->el.data.headPoint, &plastPtNode, readpt);
+      printf("{x = %d, y = %d}\n", readpt.x, readpt.y);
     }
     
    fclose(fhandle);
@@ -122,7 +125,6 @@ addPtNodeToList(struct PointNode **lhead, struct PointNode **llastEl, Point pt) 
   newPtNode->prev = NULL;
   newPtNode->next = NULL;
 
-  printf("Adding point to list %d %d\n", pt.x, pt.y);
   if(NULL == (*lhead)){
     (*lhead) = (*llastEl) = newPtNode;
     (*llastEl)->next = newPtNode;
@@ -142,9 +144,8 @@ freePointList(struct PointNode **lhead) {
   struct PointNode *nextNode = NULL;
 
   do{
-    nextNode = cNode -> next;
+    nextNode = cNode->next;
     free(cNode);
     cNode = nextNode;
   }while(cNode != (*lhead));
-  free((*lhead));
 }

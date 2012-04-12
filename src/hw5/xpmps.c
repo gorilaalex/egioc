@@ -27,12 +27,14 @@ renderGElements(XPM *canvas, struct GENode *glist){
       break;
     case POLY:
       clippedPtList = clipPolySH(canvas->displayRegion, pge->data.headPoint);
-      /*ptn = clippedPtList;
-      do {
-	renderLine(canvas, ptn->pt, ptn->next->pt);
-	ptn = ptn->next;
-	} while(clippedPtList != ptn);*/
-      //freePointList(&clippedPtList);
+      if(NULL != clippedPtList) {
+	ptn = clippedPtList;
+	do {
+	  drawBresenhamLine(canvas, ptn->pt, ptn->next->pt, 1);
+	  ptn = ptn->next;
+	} while(clippedPtList != ptn);
+	freePointList(&clippedPtList);
+      }
       break;
     default:
       fprintf(stderr, "Unhandled type (%d) !\n", pge->type);

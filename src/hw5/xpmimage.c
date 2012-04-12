@@ -29,11 +29,9 @@ freeXPM(XPM **img){
   int cnt;
   
   for(cnt = 0; cnt < (*img)->height; ++cnt){
-    printf("[%d] free data\n", cnt);
     free((*img)->data[cnt]);
   }
   free((*img)->data);
-  printf("dupa free data\n");
 
   for(cnt = 0; cnt < (*img)->ncolors; ++cnt){
     free((*img)->colta[cnt].key);

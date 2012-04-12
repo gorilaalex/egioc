@@ -28,7 +28,7 @@ Point intersectPt( Point ptStart, Point ptEnd, DispRegion r, int watchedSide )  
     slope = (ptEnd.y - ptStart.y) / (ptEnd.x - ptStart.x);
   else
     slope = DBL_MAX;
-  b = ptStart.y - ptEnd.x * slope;
+  b = ptStart.y - ptStart.x * slope;
 
   switch(watchedSide) {
   case LEFT:
@@ -62,25 +62,33 @@ struct PointNode *
 clipPlaneSH(struct PointNode **lhead, DispRegion r, int watchedSide) {
   Point ptStart;
   Point ptEnd;
+  Point ptIntersect;
   struct PointNode *lastLPt = NULL;
   struct PointNode *ptel = (*lhead);
   struct PointNode *newPolyList = NULL;
-
+  
   ptStart = (*lhead)->prev->pt;
   do {
     ptEnd = ptel->pt;
-    printf("ptst {x = %d, y = %d}, pten {x = %d, y = %d}\n", ptStart.x, ptStart.y, ptEnd.x, ptEnd.y);
+    printf("clipPlaneSH : ptst {x = %d, y = %d}, pten {x = %d, y = %d} added : ", ptStart.x, ptStart.y, ptEnd.x, ptEnd.y);
     if(isPtInside(ptEnd, r, watchedSide)) {
       /* point ptEnd is "inside" */
       if(!isPtInside(ptStart, r, watchedSide)) {
 	/* ptEnd is "inside" and ptStart is "outside" */
-	addPtNodeToList(&newPolyList, &lastLPt, intersectPt(ptEnd, ptStart, r, watchedSide));
+	ptIntersect = intersectPt(ptEnd, ptStart, r, watchedSide);
+	addPtNodeToList(&newPolyList, &lastLPt, ptIntersect);
+	printf("pt {x = %d, y = %d}, ", ptIntersect.x, ptIntersect.y);
       }
       addPtNodeToList(&newPolyList, &lastLPt, ptEnd);
+      printf("pt {x = %d, y = %d}\n", ptEnd.x, ptEnd.y);
     } else if(isPtInside(ptStart, r, watchedSide)) {
-      /* s is "inside" and p is "outside" */
-      addPtNodeToList(&newPolyList, &lastLPt, intersectPt(ptStart, ptEnd, r, watchedSide));
+      /* ptStart is "inside" and ptEnd is "outside" */
+      ptIntersect = intersectPt(ptStart, ptEnd, r, watchedSide);
+      addPtNodeToList(&newPolyList, &lastLPt, ptIntersect);
+      printf("pt {x = %d, y = %d}\n", ptIntersect.x, ptIntersect.y);
     }
+    else
+      printf("NO POINTS\n");
     ptStart = ptEnd;
     ptel = ptel->next;
   } while(ptel != (*lhead));
@@ -95,11 +103,23 @@ clipPolySH(DispRegion rect, struct PointNode *lhead) {
   struct PointNode *clipResult = NULL;
   struct PointNode *partialClipResult = NULL;
 
+  printf("*** Clipping poly against the left margin %d\n", rect.windowLeft);
   clipResult = clipPlaneSH(&lhead, rect, LEFT);
-  //partialClipResult = clipPlaneSH(&clipResult, rect, RIGHT);
-  //freePointList(&clipResult); clipResult = partialClipResult;
-  //clipPlaneSH(&clipResult, &clipResult, rect, TOP);
-  //clipPlaneSH(&clipResult, &clipResult, rect, BOTTOM);
+
+  printf("*** Clipping poly against the right margin %d\n", rect.windowRight);
+  partialClipResult = clipPlaneSH(&clipResult, rect, RIGHT);
+  if(NULL != clipResult) freePointList(&clipResult); 
+  clipResult = partialClipResult;
+  
+  printf("*** Clipping poly against the top margin %d\n", rect.windowTop);
+  partialClipResult = clipPlaneSH(&clipResult, rect, TOP);
+  if(NULL != clipResult) freePointList(&clipResult); 
+  clipResult = partialClipResult;
+  
+  printf("*** Clipping poly against the bottom margin %d\n", rect.windowBottom);
+  partialClipResult = clipPlaneSH(&clipResult, rect, BOTTOM);
+  if(NULL != clipResult) freePointList(&clipResult); 
+  clipResult = partialClipResult;
 
   return clipResult;
 }
