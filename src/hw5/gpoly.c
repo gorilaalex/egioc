@@ -19,7 +19,7 @@ int isPtInside(Point pt, DispRegion r, int watchedSide) {
   return 0;
 }
 
-Point intersectPt( Point ptStart, Point ptEnd, DispRegion r, int watchedSide )  {
+Point intersectPt(Point ptStart, Point ptEnd, DispRegion r, int watchedSide) {
   Point ptResult;
   double slope, b;
   
@@ -124,6 +124,211 @@ clipPolySH(DispRegion rect, struct PointNode *lhead) {
   return clipResult;
 }
 
-void
-clipPolyWA(struct GENode *el) {
+int lineSegmentIntersect(Point ptStartSegA, Point ptEndSegA,
+			 Point ptStartSegB, Point ptEndSegB,
+			 Point *intersectPt) {
+
+  double  distAB, theCos, theSin, newX, ABpos ;
+
+  //  Fail if either line segment is zero-length.
+  if ((ptStartSegA.x==ptEndSegA.x && ptStartSegA.y==ptEndSegA.y) || 
+      (ptStartSegB.x==ptEndSegB.x && ptStartSegB.y==ptEndSegB.y)) 
+    return 0;
+
+  //  Fail if the segments share an end-point.
+  if ((ptStartSegA.x==ptStartSegB.x && ptStartSegA.y==ptStartSegB.y) || 
+      (ptEndSegA.x==ptStartSegB.x && ptEndSegA.y==ptStartSegB.y) ||
+      (ptStartSegA.x==ptEndSegB.x && ptStartSegA.y==ptEndSegB.y) ||
+      (ptEndSegA.x==ptEndSegB.x && ptEndSegA.y==ptEndSegB.y))
+    return 0;
+
+  //  (1) Translate the system so that point A is on the origin.
+  ptEndSegA.x-=ptStartSegA.x; ptEndSegA.y-=ptStartSegA.y;
+  ptStartSegB.x-=ptStartSegA.x; ptStartSegB.y-=ptStartSegA.y;
+  ptEndSegB.x-=ptStartSegA.x; ptEndSegB.y-=ptStartSegA.y;
+
+  //  Discover the length of segment A-B.
+  distAB=sqrt(ptEndSegA.x * ptEndSegA.x + ptEndSegA.y * ptEndSegA.y);
+
+  //  (2) Rotate the system so that point B is on the positive X axis.
+  theCos=ptEndSegA.x/distAB;
+  theSin=ptEndSegA.y/distAB;
+  newX=ptStartSegB.x*theCos+ptStartSegB.y*theSin;
+  ptStartSegB.y  =ptStartSegB.y*theCos-ptStartSegB.x*theSin; ptStartSegB.x=newX;
+  newX=ptEndSegB.x*theCos+ptEndSegB.y*theSin;
+  ptEndSegB.y  =ptEndSegB.y*theCos-ptEndSegB.x*theSin; ptEndSegB.x=newX;
+
+  //  Fail if segment C-D doesn't cross line A-B.
+  if ((ptStartSegB.y<0.0 && ptEndSegB.y<0.0) || (ptStartSegB.y>=0.0 && ptEndSegB.y>=0.0)) return 0;
+
+  //  (3) Discover the position of the intersection point along line A-B.
+  ABpos=ptEndSegB.x+(ptStartSegB.x-ptEndSegB.x)*ptEndSegB.y/(ptEndSegB.y-ptStartSegB.y);
+
+  //  Fail if segment C-D crosses line A-B outside of segment A-B.
+  if (ABpos<0.0 || ABpos>distAB) return 0;
+
+  //  (4) Apply the discovered position to line A-B in the original coordinate system.
+  intersectPt->x = ptStartSegA.x+ABpos*theCos;
+  intersectPt->y = ptStartSegA.y+ABpos*theSin;
+
+  //  Success.
+  return 1; 
+}
+
+struct GENode *
+clipPolyWA(DispRegion rect, struct PointNode *lhead) {
+  struct GENode *processedPolies = NULL;
+  struct GENode *newPoly = NULL;
+  struct GENode *lastAddedPoly = NULL;
+  struct PointNode *newPolyList = NULL;
+  struct PointNode *lastPolyPtNode = NULL;
+  struct PointNode *clipPoly = NULL;
+  struct PointNode *lastNClipPoly = NULL;
+  struct PointNode *ptStart = NULL;
+  struct PointNode *ptEnd = NULL;
+  struct PointNode *ptStartClip = NULL;
+  struct PointNode *ptEndClip = NULL;
+  struct PointNode *newPtNode = NULL;
+  struct PointNode *ptClipIntersectParent = NULL;
+  struct PointNode *entryPtList = NULL;
+  struct PointNode *lastEntryPtNode = NULL;
+  struct PointNode *exitPtList = NULL;
+  struct PointNode *lastExitPtNode = NULL;
+  int entryOpType = 0;
+  Point auxpt;
+  Point intersectPt;
+  Point closestIntersectPt;
+  int intersectFound = 0;
+
+  /* build clip poly using DisplayRegion to provide conter-clockwise coordonates */
+  printf("Clip created: {%d %d}, {%d %d}, {%d %d}, {%d %d}\n", 
+	 rect.windowLeft, rect.windowTop, 
+	 rect.windowLeft, rect.windowBottom,
+	 rect.windowRight, rect.windowBottom,
+	 rect.windowRight, rect.windowTop);
+  auxpt.x = rect.windowLeft; auxpt.y = rect.windowTop;
+  addPtNodeToList(&clipPoly, &lastNClipPoly, auxpt);
+  auxpt.x = rect.windowLeft; auxpt.y = rect.windowBottom;
+  addPtNodeToList(&clipPoly, &lastNClipPoly, auxpt);
+  auxpt.x = rect.windowRight; auxpt.y = rect.windowBottom;
+  addPtNodeToList(&clipPoly, &lastNClipPoly, auxpt);
+  auxpt.x = rect.windowRight; auxpt.y = rect.windowTop;
+  addPtNodeToList(&clipPoly, &lastNClipPoly, auxpt);
+
+  ptStart = lhead;
+  do {
+    ptEnd = ptStart->next;
+    printf("poly Start {x = %d, y = %d}, End {x = %d, y = %d}\n", ptStart->pt.x, ptStart->pt.y, ptEnd->pt.x, ptEnd->pt.y);
+
+    /* check for intersects with clip poly and pick the closest point to ptStart */
+    auxpt = ptStart->pt;
+    closestIntersectPt = ptEnd->pt;
+    do {
+      ptStartClip = clipPoly;
+      intersectFound = 0;
+      do {
+	ptEndClip = ptStartClip->next;
+	printf("clip Start {x = %d, y = %d} End {x = %d, y = %d}\n", ptStartClip->pt.x, ptStartClip->pt.y, ptEndClip->pt.x, ptEndClip->pt.y);
+	//getchar();
+	if(lineSegmentIntersect(auxpt, ptEnd->pt, ptStartClip->pt, ptEndClip->pt, &intersectPt) == 1) {
+	  if(sqrt(pow(auxpt.x - intersectPt.x, 2) + pow(auxpt.y - intersectPt.y, 2)) <
+	     sqrt(pow(auxpt.x - closestIntersectPt.x, 2) + pow(auxpt.y - closestIntersectPt.y, 2))) {
+	    
+	    //if(closestIntersectPt.x != intersectPt.x || closestIntersectPt.y != intersectPt.y){
+	   intersectFound = 1;   
+	      //}
+	    printf("intersect {x = %d, y = %d}, CIntersect {x = %d, y = %d}\n", intersectPt.x, intersectPt.y, closestIntersectPt.x, closestIntersectPt.y);
+	    closestIntersectPt = intersectPt;
+	    ptClipIntersectParent = ptStartClip;
+	    //getchar();
+	  }
+	}
+	ptStartClip = ptEndClip;
+      } while(ptStartClip != clipPoly);
+
+      if(intersectFound == 1) {
+	/* a closer intersect point to current poly start point segment is available */
+
+	/* add it to poly list */
+	newPtNode = (struct PointNode *)malloc(sizeof(struct PointNode));
+	newPtNode->pt = closestIntersectPt;
+	newPtNode->clip = newPtNode->poly = NULL;
+	newPtNode->prev = ptStart;
+	newPtNode->next = ptStart->next;
+	ptStart->next = newPtNode;
+
+	/* add it to clip list */
+	newPtNode = (struct PointNode *)malloc(sizeof(struct PointNode));
+	newPtNode->pt = closestIntersectPt;
+	newPtNode->clip = newPtNode->poly = NULL;
+	newPtNode->prev = ptClipIntersectParent;
+	newPtNode->next = ptClipIntersectParent->next;
+	ptClipIntersectParent->next = newPtNode;
+
+	/* add it to appropiate entry/exit list */
+	if(0 == entryOpType) {
+	  /* entry */
+	  addPtNodeToList(&entryPtList, &lastEntryPtNode, closestIntersectPt);
+	  lastEntryPtNode->clip = ptClipIntersectParent->next;
+	  lastEntryPtNode->poly = ptStart->next;
+	  ptStart->next->poly = lastEntryPtNode;
+	  entryOpType = 1;
+	} else {
+	  /* exit */
+	  addPtNodeToList(&exitPtList, &lastExitPtNode, closestIntersectPt);
+	  lastExitPtNode->clip = ptClipIntersectParent->next;
+	  lastExitPtNode->poly = ptStart->next;
+	  ptStart->next->clip = lastExitPtNode;
+	  entryOpType = 0;
+	}
+
+	auxpt = closestIntersectPt;
+      }
+      printf("auxpt {x = %d, y = %d} intersectFound = %d\n", auxpt.x, auxpt.y, intersectFound);
+    } while(intersectFound == 1);
+
+    /* advance to next poly segment */
+    ptStart = ptEnd;
+  } while(ptStart != lhead);
+
+  /* reaching this point we are guranteed to have an exit/entry list and an annoted poly/clip */
+  printf("\nBuilding polies: \n");
+  ptStart = entryPtList->poly;
+  do {
+    /* aquire a valid clip */
+    do {
+      ptEnd = ptStart->next;
+      printf("{%d %d} ", ptStart->pt.x, ptStart->pt.y);
+      //addPtNodeToList(&newPolyList, &lastPolyPtNode, ptStart->pt);
+      ptStart = ptEnd;
+    } while(ptStart != entryPtList && ptStart->clip == NULL);
+    //addPtNodeToList(&newPolyList, &lastPolyPtNode, ptStart->pt);
+    printf("{%d %d}\n", ptStart->pt.x, ptStart->pt.y);
+
+    //return processedPolies;
+    /* get rid of external data */
+    do {
+      ptEnd = ptStart->next;
+      printf("{%d %d} ", ptStart->pt.x, ptStart->pt.y);
+      addPtNodeToList(&newPolyList, &lastPolyPtNode, ptStart->pt);
+      ptStart = ptEnd;
+    } while(ptStart != entryPtList && ptStart->poly == NULL);
+    addPtNodeToList(&newPolyList, &lastPolyPtNode, ptStart->pt);
+    printf("{%d %d}\n", ptStart->pt.x, ptStart->pt.y);
+
+    /* add poly to list */
+    newPoly = (struct GENode *)malloc(sizeof(struct GENode));
+    newPoly->el.type = POLY;
+    newPoly->el.data.headPoint = newPolyList;
+    if(NULL == processedPolies)
+      lastAddedPoly = processedPolies = newPoly;
+    else {
+      lastAddedPoly->next = newPoly;
+      lastAddedPoly = newPoly;
+    }
+    newPolyList = lastPolyPtNode = NULL;
+
+  } while(ptStart != entryPtList->poly);
+
+  return processedPolies;
 }

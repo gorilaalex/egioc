@@ -124,7 +124,8 @@ addPtNodeToList(struct PointNode **lhead, struct PointNode **llastEl, Point pt) 
   newPtNode->pt = pt;
   newPtNode->prev = NULL;
   newPtNode->next = NULL;
-
+  newPtNode->clip = newPtNode->poly = NULL;
+  
   if(NULL == (*lhead)){
     (*lhead) = (*llastEl) = newPtNode;
     (*llastEl)->next = newPtNode;

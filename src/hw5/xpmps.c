@@ -17,6 +17,8 @@ renderGElements(XPM *canvas, struct GENode *glist){
   struct GENode *pgl = glist;
   struct PointNode *ptn = NULL;
   struct PointNode *clippedPtList = NULL;
+  struct GENode *auxglist = NULL;
+  struct GENode *auxpge = NULL;
   GElement *pge = NULL;
 
   while(NULL != pgl){
@@ -26,6 +28,7 @@ renderGElements(XPM *canvas, struct GENode *glist){
       renderLine(canvas, pge->data.line.st, pge->data.line.en);
       break;
     case POLY:
+      #ifdef POLY_SH_CLIP
       clippedPtList = clipPolySH(canvas->displayRegion, pge->data.headPoint);
       if(NULL != clippedPtList) {
 	ptn = clippedPtList;
@@ -35,6 +38,20 @@ renderGElements(XPM *canvas, struct GENode *glist){
 	} while(clippedPtList != ptn);
 	freePointList(&clippedPtList);
       }
+      #elif POLY_WA_CLIP
+      auxpge = auxglist = clipPolyWA(canvas->displayRegion, pge->data.headPoint);
+      while(NULL != auxpge) {
+	if(auxpge->el.type == POLY) {
+	  clippedPtList = auxpge->el.data.headPoint;
+	  ptn = clippedPtList;
+	  do {
+	    drawBresenhamLine(canvas, ptn->pt, ptn->next->pt, 1);
+	    ptn = ptn->next;
+	  } while(clippedPtList != ptn);
+	}
+	auxpge = auxpge->next;
+      }
+      #endif
       break;
     default:
       fprintf(stderr, "Unhandled type (%d) !\n", pge->type);

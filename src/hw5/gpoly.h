@@ -12,7 +12,7 @@
 struct PointNode *
 clipPolySH(DispRegion r, struct PointNode *lhead);
 
-void
-clipPolyWA(struct GENode *el);
+struct GENode *
+clipPolyWA(DispRegion rect, struct PointNode *lhead);
 
 #endif

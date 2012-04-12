@@ -12,6 +12,8 @@ struct PointNode {
   Point pt;
   struct PointNode *next;
   struct PointNode *prev;
+  struct PointNode *poly;
+  struct PointNode *clip;
 };
 
 typedef enum {UNDEFINED_ELEMENT, BLANK, LINE, POINT, POLY} GElementType;
