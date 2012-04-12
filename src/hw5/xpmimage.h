@@ -40,16 +40,18 @@ typedef struct{
 	char *key;
 } XPMColor;
 
+typedef struct {
+  int windowTop;
+  int windowLeft;
+  int windowBottom;
+  int windowRight;
+} DispRegion;
+
 /* XPM structure that holds a complete XPM image segment */
 typedef struct{
   unsigned int width; 
   unsigned int height;
-  struct{
-    int windowTop;
-    int windowLeft;
-    int windowBottom;
-    int windowRight;
-  } displayRegion;
+  DispRegion displayRegion;
   unsigned short chrperpixel;
   unsigned int ncolors; 
   XPMColor *colta;

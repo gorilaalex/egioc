@@ -16,6 +16,7 @@ void
 renderGElements(XPM *canvas, struct GENode *glist){
   struct GENode *pgl = glist;
   struct PointNode *ptn = NULL;
+  struct PointNode *clippedPtList = NULL;
   GElement *pge = NULL;
 
   while(NULL != pgl){
@@ -25,14 +26,13 @@ renderGElements(XPM *canvas, struct GENode *glist){
       renderLine(canvas, pge->data.line.st, pge->data.line.en);
       break;
     case POLY:
-      ptn = pge->data.headPoint;
-      while(NULL != ptn) {
-	if(NULL != ptn->next)
-	  renderLine(canvas, ptn->pt, ptn->next->pt);
-	else
-	  renderLine(canvas, ptn->pt, pge->data.headPoint->pt);
+      clippedPtList = clipPolySH(canvas->displayRegion, pge->data.headPoint);
+      /*ptn = clippedPtList;
+      do {
+	renderLine(canvas, ptn->pt, ptn->next->pt);
 	ptn = ptn->next;
-      }
+	} while(clippedPtList != ptn);*/
+      //freePointList(&clippedPtList);
       break;
     default:
       fprintf(stderr, "Unhandled type (%d) !\n", pge->type);

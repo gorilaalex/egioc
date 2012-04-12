@@ -3,7 +3,7 @@ PRJNAME = lineout
 CC = gcc
 CFLAGS = -Wall -g
 LDFLAGS = -lm
-OBJS = xpmimage.o xpmps.o gtransforms.o gloader.o
+OBJS = xpmimage.o xpmps.o gtransforms.o gloader.o gpoly.o
 
 #!!! you shouldn't modify anything beyond this point
 all: $(OBJS)

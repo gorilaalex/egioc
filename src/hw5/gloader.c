@@ -56,13 +56,13 @@ loadPS(struct GENode **ellist, const char *file) {
   
 void
 loadPOL(struct GENode **ellist, const char *file) {
-  char currentLine[255];
+  char fileLine[255];
   FILE *fhandle = fopen(file, "r");
   Point readpt;
   struct GENode *plastGNode = NULL;
   struct PointNode *plastPtNode = NULL; 
   struct GENode *newGNode = NULL;
-  struct PointNode *newPtNode = NULL;
+  //struct PointNode *newPtNode = NULL;
 
   if(NULL != fhandle){
 
@@ -87,26 +87,12 @@ loadPOL(struct GENode **ellist, const char *file) {
     }
 
     /* process the file */
-    fgets(currentLine, sizeof(currentLine), fhandle);
-    while(!feof(fhandle) && strlen(currentLine) != 0){
-      if(sscanf(currentLine, "%d %d", &readpt.x, &readpt.y) != 0){
-	newPtNode = (struct PointNode *)malloc(sizeof(struct PointNode));
-	newPtNode->pt = readpt;
-	newPtNode->next = NULL;
-	newPtNode->prev = NULL;
-
-	if(NULL == plastGNode->el.data.headPoint){
-	  plastGNode->el.data.headPoint = plastPtNode = newPtNode;
-	} else {
-	  plastPtNode->next = newPtNode;
-	  newPtNode->prev = plastPtNode;
-	  plastPtNode = newPtNode;
-	}
-      }
-      fgets(currentLine, sizeof(currentLine), fhandle);
+    while(!feof(fhandle) && fgets(fileLine, sizeof(fileLine), fhandle) != 0) {
+      sscanf(fileLine, "%d %d", &readpt.x, &readpt.y);
+      addPtNodeToList(&plastGNode->el.data.headPoint, &plastPtNode, readpt);
     }
-
-    fclose(fhandle);
+    
+   fclose(fhandle);
   }
 }
   
@@ -117,7 +103,48 @@ freeGList(struct GENode **glist) {
 
   while(NULL != pge){
     nextpge = pge->next;
+    switch(pge->el.type) {
+    case POLY:
+      freePointList(&pge->el.data.headPoint);
+      break;
+    default:
+      break;
+    }
     free(pge);
     pge = nextpge;
   }
+}
+
+void
+addPtNodeToList(struct PointNode **lhead, struct PointNode **llastEl, Point pt) {
+  struct PointNode *newPtNode = (struct PointNode *)malloc(sizeof(struct PointNode));
+  newPtNode->pt = pt;
+  newPtNode->prev = NULL;
+  newPtNode->next = NULL;
+
+  printf("Adding point to list %d %d\n", pt.x, pt.y);
+  if(NULL == (*lhead)){
+    (*lhead) = (*llastEl) = newPtNode;
+    (*llastEl)->next = newPtNode;
+    (*llastEl)->prev = newPtNode;
+  } else {
+    newPtNode->prev = (*llastEl);
+    newPtNode->next = (*lhead);
+    (*lhead)->prev = newPtNode;
+    (*llastEl)->next = newPtNode;
+    (*llastEl) = newPtNode;
+  }
+}
+
+void
+freePointList(struct PointNode **lhead) {
+  struct PointNode *cNode = (*lhead);
+  struct PointNode *nextNode = NULL;
+
+  do{
+    nextNode = cNode -> next;
+    free(cNode);
+    cNode = nextNode;
+  }while(cNode != (*lhead));
+  free((*lhead));
 }

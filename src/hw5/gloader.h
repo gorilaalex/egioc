@@ -21,4 +21,10 @@ loadPOL(struct GENode **ellist, const char *file);
 void
 freeGList(struct GENode **glist);
 
+void
+addPtNodeToList(struct PointNode **lhead, struct PointNode **llastEl, Point pt);
+
+void
+freePointList(struct PointNode **lhead);
+
 #endif

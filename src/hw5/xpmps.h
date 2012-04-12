@@ -7,6 +7,7 @@
 #include "gloader.h"
 #include "xpmimage.h"
 #include "gdatatypes.h"
+#include "gpoly.h"
 
 #define PS_BEGIN_MARK "%%%BEGIN\n"
 #define PS_END_MARK "%%%END\n"
