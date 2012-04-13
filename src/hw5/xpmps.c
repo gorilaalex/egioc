@@ -21,6 +21,7 @@ renderGElements(XPM *canvas, struct GENode *glist){
   struct GENode *auxpge = NULL;
   GElement *pge = NULL;
 
+  printf(" *** Rendering graphical elements\n");
   while(NULL != pgl){
     pge = &pgl->el;
     switch(pge->type){
@@ -40,14 +41,17 @@ renderGElements(XPM *canvas, struct GENode *glist){
       }
       #elif POLY_WA_CLIP
       auxpge = auxglist = clipPolyWA(canvas->displayRegion, pge->data.headPoint);
+
       while(NULL != auxpge) {
 	if(auxpge->el.type == POLY) {
 	  clippedPtList = auxpge->el.data.headPoint;
 	  ptn = clippedPtList;
-	  do {
-	    drawBresenhamLine(canvas, ptn->pt, ptn->next->pt, 1);
-	    ptn = ptn->next;
-	  } while(clippedPtList != ptn);
+	  if(NULL != ptn) {
+	    do {
+	      drawBresenhamLine(canvas, ptn->pt, ptn->next->pt, 1);
+	      ptn = ptn->next;
+	    } while(clippedPtList != ptn);
+	  }
 	}
 	auxpge = auxpge->next;
       }

@@ -22,6 +22,12 @@ void
 freeGList(struct GENode **glist);
 
 void
+printPtList(const char *preMsg, struct PointNode *lhead);
+
+struct PointNode *
+findPtInList(struct PointNode *lhead, Point pt);
+
+void
 addPtNodeToList(struct PointNode **lhead, struct PointNode **llastEl, Point pt);
 
 void

@@ -194,6 +194,8 @@ clipPolyWA(DispRegion rect, struct PointNode *lhead) {
   struct PointNode *lastEntryPtNode = NULL;
   struct PointNode *exitPtList = NULL;
   struct PointNode *lastExitPtNode = NULL;
+  struct PointNode *ptStartValidRegion = NULL;
+
   int entryOpType = 0;
   Point auxpt;
   Point intersectPt;
@@ -218,45 +220,42 @@ clipPolyWA(DispRegion rect, struct PointNode *lhead) {
   ptStart = lhead;
   do {
     ptEnd = ptStart->next;
-    printf("poly Start {x = %d, y = %d}, End {x = %d, y = %d}\n", ptStart->pt.x, ptStart->pt.y, ptEnd->pt.x, ptEnd->pt.y);
+    printf("[POLY] Start {x = %d, y = %d}, End {x = %d, y = %d}\n", ptStart->pt.x, ptStart->pt.y, ptEnd->pt.x, ptEnd->pt.y);
 
-    /* check for intersects with clip poly and pick the closest point to ptStart */
+    /* check for intersects with clip poly and pick the closest point to poly start point */
     auxpt = ptStart->pt;
     closestIntersectPt = ptEnd->pt;
+    ptStartClip = clipPoly;
+    intersectFound = 0;
     do {
-      ptStartClip = clipPoly;
-      intersectFound = 0;
-      do {
-	ptEndClip = ptStartClip->next;
-	printf("clip Start {x = %d, y = %d} End {x = %d, y = %d}\n", ptStartClip->pt.x, ptStartClip->pt.y, ptEndClip->pt.x, ptEndClip->pt.y);
-	//getchar();
-	if(lineSegmentIntersect(auxpt, ptEnd->pt, ptStartClip->pt, ptEndClip->pt, &intersectPt) == 1) {
-	  if(sqrt(pow(auxpt.x - intersectPt.x, 2) + pow(auxpt.y - intersectPt.y, 2)) <
-	     sqrt(pow(auxpt.x - closestIntersectPt.x, 2) + pow(auxpt.y - closestIntersectPt.y, 2))) {
-	    
-	    //if(closestIntersectPt.x != intersectPt.x || closestIntersectPt.y != intersectPt.y){
-	   intersectFound = 1;   
-	      //}
-	    printf("intersect {x = %d, y = %d}, CIntersect {x = %d, y = %d}\n", intersectPt.x, intersectPt.y, closestIntersectPt.x, closestIntersectPt.y);
-	    closestIntersectPt = intersectPt;
-	    ptClipIntersectParent = ptStartClip;
-	    //getchar();
-	  }
+      ptEndClip = ptStartClip->next;
+      printf("[CLIP] Start {x = %d, y = %d} End {x = %d, y = %d}\n", ptStartClip->pt.x, ptStartClip->pt.y, ptEndClip->pt.x, ptEndClip->pt.y);
+      if(lineSegmentIntersect(auxpt, ptEnd->pt, ptStartClip->pt, ptEndClip->pt, &intersectPt) == 1) {
+	if(sqrt(pow(auxpt.x - intersectPt.x, 2) + pow(auxpt.y - intersectPt.y, 2)) <
+	   sqrt(pow(auxpt.x - closestIntersectPt.x, 2) + pow(auxpt.y - closestIntersectPt.y, 2))) {	  
+	  intersectFound = 1;
+	  printf("intersect {x = %d, y = %d}, CIntersect {x = %d, y = %d}\n", intersectPt.x, intersectPt.y, closestIntersectPt.x, closestIntersectPt.y);
+	  closestIntersectPt = intersectPt;
+	  ptClipIntersectParent = ptStartClip;
 	}
-	ptStartClip = ptEndClip;
-      } while(ptStartClip != clipPoly);
-
-      if(intersectFound == 1) {
-	/* a closer intersect point to current poly start point segment is available */
-
-	/* add it to poly list */
+      }
+      ptStartClip = ptEndClip;
+    } while(ptStartClip != clipPoly);
+    
+    if(intersectFound == 1) {
+      /* a closer intersect point to current poly start point segment is available */
+      
+      /* add it to poly list */
+      if(findPtInList(lhead, closestIntersectPt) == NULL) {
 	newPtNode = (struct PointNode *)malloc(sizeof(struct PointNode));
 	newPtNode->pt = closestIntersectPt;
 	newPtNode->clip = newPtNode->poly = NULL;
 	newPtNode->prev = ptStart;
 	newPtNode->next = ptStart->next;
 	ptStart->next = newPtNode;
-
+      }
+      
+      if(findPtInList(clipPoly, closestIntersectPt) == NULL){
 	/* add it to clip list */
 	newPtNode = (struct PointNode *)malloc(sizeof(struct PointNode));
 	newPtNode->pt = closestIntersectPt;
@@ -264,71 +263,112 @@ clipPolyWA(DispRegion rect, struct PointNode *lhead) {
 	newPtNode->prev = ptClipIntersectParent;
 	newPtNode->next = ptClipIntersectParent->next;
 	ptClipIntersectParent->next = newPtNode;
-
-	/* add it to appropiate entry/exit list */
+      }
+      
+      ptStart->next->clip = ptClipIntersectParent->next;
+      ptClipIntersectParent->next->poly = ptStart->next;
+      
+      /* add it to appropiate entry/exit list */
 	if(0 == entryOpType) {
 	  /* entry */
 	  addPtNodeToList(&entryPtList, &lastEntryPtNode, closestIntersectPt);
 	  lastEntryPtNode->clip = ptClipIntersectParent->next;
 	  lastEntryPtNode->poly = ptStart->next;
-	  ptStart->next->poly = lastEntryPtNode;
 	  entryOpType = 1;
 	} else {
 	  /* exit */
 	  addPtNodeToList(&exitPtList, &lastExitPtNode, closestIntersectPt);
 	  lastExitPtNode->clip = ptClipIntersectParent->next;
 	  lastExitPtNode->poly = ptStart->next;
-	  ptStart->next->clip = lastExitPtNode;
 	  entryOpType = 0;
 	}
-
+	
 	auxpt = closestIntersectPt;
-      }
-      printf("auxpt {x = %d, y = %d} intersectFound = %d\n", auxpt.x, auxpt.y, intersectFound);
-    } while(intersectFound == 1);
-
+    }
+    printf("auxpt {x = %d, y = %d} intersectFound = %d\n", auxpt.x, auxpt.y, intersectFound);
+    
     /* advance to next poly segment */
-    ptStart = ptEnd;
+    ptStart = ptStart->next;//ptEnd;
   } while(ptStart != lhead);
 
+  /* dump the lists */
+  printPtList("Final poly point list contains : ", lhead);
+  printPtList("Final clip point list contains : ", clipPoly);
+  printPtList("Final entry list : ", entryPtList);
+  printPtList("Final exit list : ", exitPtList);
+
   /* reaching this point we are guranteed to have an exit/entry list and an annoted poly/clip */
-  printf("\nBuilding polies: \n");
-  ptStart = entryPtList->poly;
-  do {
-    /* aquire a valid clip */
+  if(NULL != entryPtList) {
+    printf("\nAssembling polies: \n");
+    ptStart = entryPtList->poly;
+    ptStartValidRegion = ptStart;
     do {
-      ptEnd = ptStart->next;
-      printf("{%d %d} ", ptStart->pt.x, ptStart->pt.y);
-      //addPtNodeToList(&newPolyList, &lastPolyPtNode, ptStart->pt);
-      ptStart = ptEnd;
-    } while(ptStart != entryPtList && ptStart->clip == NULL);
-    //addPtNodeToList(&newPolyList, &lastPolyPtNode, ptStart->pt);
-    printf("{%d %d}\n", ptStart->pt.x, ptStart->pt.y);
-
-    //return processedPolies;
-    /* get rid of external data */
-    do {
-      ptEnd = ptStart->next;
-      printf("{%d %d} ", ptStart->pt.x, ptStart->pt.y);
+      /* aquire a valid clip */
+      printf("In region : ");
+      do {
+	ptEnd = ptStart->next;
+	printf("{%d %d} ", ptStart->pt.x, ptStart->pt.y);
+	addPtNodeToList(&newPolyList, &lastPolyPtNode, ptStart->pt);
+ 
+	if((lastEntryPtNode = findPtInList(entryPtList, ptStart->pt)) != NULL) {
+	  lastEntryPtNode->prev->next = lastEntryPtNode->next;
+	  lastEntryPtNode->next->prev = lastEntryPtNode->prev;
+	  if(lastEntryPtNode->next != lastEntryPtNode) {
+	    entryPtList = lastEntryPtNode->next;
+	  } else {
+	    entryPtList = NULL;
+	  }
+	  free(lastEntryPtNode);
+	}
+	ptStart = ptEnd;
+      } while(ptStart != entryPtList && ptStart->clip == NULL);
+      ptStart = ptStart->clip;
+      printf("{%d %d}\n", ptStart->pt.x, ptStart->pt.y);
       addPtNodeToList(&newPolyList, &lastPolyPtNode, ptStart->pt);
-      ptStart = ptEnd;
-    } while(ptStart != entryPtList && ptStart->poly == NULL);
-    addPtNodeToList(&newPolyList, &lastPolyPtNode, ptStart->pt);
-    printf("{%d %d}\n", ptStart->pt.x, ptStart->pt.y);
 
-    /* add poly to list */
-    newPoly = (struct GENode *)malloc(sizeof(struct GENode));
-    newPoly->el.type = POLY;
-    newPoly->el.data.headPoint = newPolyList;
-    if(NULL == processedPolies)
-      lastAddedPoly = processedPolies = newPoly;
-    else {
-      lastAddedPoly->next = newPoly;
-      lastAddedPoly = newPoly;
-    }
-    newPolyList = lastPolyPtNode = NULL;
-
-  } while(ptStart != entryPtList->poly);
-
+      /* get rid of external vertexes */
+      printf("Outside region : ");
+      do {
+	ptEnd = ptStart->next;
+	printf("{%d %d} ", ptStart->pt.x, ptStart->pt.y);
+	ptStart = ptEnd;
+      } while(ptStart != entryPtList && ptStart->poly == NULL);
+      printf("{%d %d}\n", ptStart->pt.x, ptStart->pt.y);
+      
+      if(ptStart->poly != NULL && 
+	 ptStart->pt.x == ptStartValidRegion->pt.x &&
+	 ptStart->pt.y == ptStartValidRegion->pt.y) {
+	/* we have a assembled a complete new valid region */
+	/* add it to GENode structure */
+	newPoly = (struct GENode *)malloc(sizeof(struct GENode));
+	newPoly->el.type = POLY;
+	newPoly->el.data.headPoint = newPolyList;
+	if(NULL == processedPolies)
+	  lastAddedPoly = processedPolies = newPoly;
+	else {
+	  lastAddedPoly->next = newPoly;
+	  lastAddedPoly = newPoly;
+	}
+	newPolyList = lastPolyPtNode = NULL;
+	
+	/* advance to new start region */
+	if(NULL != entryPtList) {
+	  ptStartValidRegion = entryPtList->poly;
+	  printf("New start region initialized at {%d %d}\n", ptStartValidRegion->pt.x, ptStartValidRegion->pt.y);
+	} else {
+	  ptStartValidRegion = NULL;
+	  printf("No more points in entry list!\n");
+	}
+      }
+      ptStart = ptStart->poly;
+    } while(ptStartValidRegion != NULL);
+  } else {
+    /* no clipping done, preserve the point list */
+    processedPolies = (struct GENode *)malloc(sizeof(struct GENode));
+    processedPolies->el.type = POLY;
+    processedPolies->el.data.headPoint = lhead;
+    processedPolies->next = NULL;
+  }
+ 
   return processedPolies;
 }

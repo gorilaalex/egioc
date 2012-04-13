@@ -21,7 +21,7 @@ hw5_wa: all
 run_hw5_sh: all
 	./$(PRJNAME) -f insh.pol -w 200 -h 200 -wl 12 -wt 70 -wr 150 -wb 2 -o out.xpm
 run_hw5_wa: all
-	./$(PRJNAME) -f inwa.pol -w 200 -h 200 -wt 170 -o out.xpm
+	./$(PRJNAME) -f inwa.pol -w 200 -h 200 -wl 20 -wr 180 -wt 150 -wb 50 -o out.xpm
 
 ./%.o: ./%.c
 	$(CC) -c $(CFLAGS) -o $@ $<

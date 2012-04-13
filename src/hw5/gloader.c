@@ -98,7 +98,7 @@ loadPOL(struct GENode **ellist, const char *file) {
    fclose(fhandle);
   }
 }
-  
+
 void
 freeGList(struct GENode **glist) {
   struct GENode *pge = (*glist);
@@ -116,6 +116,32 @@ freeGList(struct GENode **glist) {
     free(pge);
     pge = nextpge;
   }
+}
+
+void
+printPtList(const char *preMsg, struct PointNode *lhead) {
+  struct PointNode *nextNode = lhead;
+
+  printf("%s", preMsg);
+  do {
+    printf("{%d, %d} ", nextNode->pt.x, nextNode->pt.y);
+    nextNode = nextNode->next;
+  } while(nextNode != lhead);
+  printf("\n");
+}
+
+struct PointNode *
+findPtInList(struct PointNode *lhead, Point pt) {
+  struct PointNode *nextNode = lhead;
+
+  do {
+    if(nextNode->pt.x == pt.x && nextNode->pt.y == pt.y) {
+      return nextNode;
+    }
+    nextNode = nextNode->next;
+  } while(nextNode != lhead);
+  
+  return NULL;
 }
 
 void
