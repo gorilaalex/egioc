@@ -1,0 +1,338 @@
+#include "xpm.h"
+
+XPM *
+newXPM(unsigned int width, unsigned int height, unsigned short cpp, unsigned int ncolors){
+  XPM *toRet = NULL;
+
+  toRet = (XPM *)malloc(sizeof(XPM));
+  toRet->width = width;
+  toRet->height = height;
+  toRet->displayRegion.windowLeft = 0;
+  toRet->displayRegion.windowBottom = 0;
+  toRet->displayRegion.windowTop = height;
+  toRet->displayRegion.windowRight = width;
+  toRet->chrperpixel = cpp;
+  toRet->ncolors = ncolors;
+  toRet->colta = (XPMColor *)calloc(ncolors, sizeof(XPMColor));
+  toRet->data = (unsigned short **)malloc(height * sizeof(unsigned short *));
+
+  int cnt;
+  for(cnt = 0; cnt < height; ++cnt){
+    toRet->data[cnt] = (unsigned short *)calloc(width, sizeof(unsigned short));
+  }
+
+  return toRet;
+}
+
+void
+freeXPM(XPM **img){
+  int cnt;
+
+  for(cnt = 0; cnt < (*img)->height; ++cnt){
+    free((*img)->data[cnt]);
+  }
+  free((*img)->data);
+
+  for(cnt = 0; cnt < (*img)->ncolors; ++cnt){
+    free((*img)->colta[cnt].key);
+    free((*img)->colta[cnt].chars);
+  }
+  free((*img)->colta);
+
+  free((*img));
+}
+
+void
+assignXPMdisplayRegion(XPM *img, int wLeft, int wTop, int wRight, int wBottom){
+  img->displayRegion.windowLeft = wLeft;
+  img->displayRegion.windowBottom = wBottom;
+  img->displayRegion.windowTop = wTop;
+  img->displayRegion.windowRight = wRight;
+}
+
+int
+putXPMpixel(XPM *img, unsigned int x, unsigned int y, unsigned short colorindex){
+  int fctStatus = 1;
+
+  if(colorindex > img->ncolors ||
+     x > img->width ||
+     y > img->height)
+    fctStatus = 0;
+  else{
+    img->data[y][x] = colorindex;
+  }
+
+  return fctStatus;
+}
+
+int
+setXPMColor(XPM *img, unsigned int index, XPMColor pixdata){
+  int fctStatus = 1;
+
+  if(index > img->ncolors)	fctStatus = 0;
+  else{
+    if(img->colta[index].chars != NULL)	free(img->colta[index].chars);
+    if(img->colta[index].key != NULL)	free(img->colta[index].key);
+
+    img->colta[index] = pixdata;
+  }
+
+  return fctStatus;
+}
+
+int
+saveXPMtofile(XPM *img, char *filepath){
+  FILE *fXPM = fopen(filepath, "w");
+  int fctStatus = 1;
+
+  if(fXPM == NULL)	fctStatus = 0;
+  else{
+    /* write XPM header */
+    fprintf(fXPM, "/* XPM */\n"
+	    "static char *egc[] = {\n");
+
+    /* dump image properties */
+    fprintf(fXPM, "\" %d %d %d %d \",\n", img->width, img->height, img->ncolors, img->chrperpixel);
+
+    /* dump color table */
+    int id = 0;
+    for(id = 0; id < img->ncolors; ++id){
+      fprintf(fXPM, "\"%s %s #%02X%02X%02X\",\n", img->colta[id].chars,
+	      img->colta[id].key,
+	      img->colta[id].clr.red,
+	      img->colta[id].clr.green,
+	      img->colta[id].clr.blue);
+    }
+
+    /* dump image pixels */
+    int xpix = 0;
+    int ypix = 0;
+    for(ypix = 0; ypix < img->height; ++ypix){
+      fprintf(fXPM,"\"");
+      for(xpix = 0; xpix < img->width; ++xpix){
+	fprintf(fXPM, "%s", img->colta[img->data[ypix][xpix]].chars);
+      }
+      fprintf(fXPM,"\"%c\n", (ypix == img->height - 1 ? ' ' : ','));
+    }
+
+    fprintf(fXPM, "};\n");
+    fclose(fXPM);
+  }
+
+  return fctStatus;
+}
+
+void
+assignXPMColorTable(XPM *img, unsigned char vColors[][3], int clrCnt){
+  XPMColor clrData;
+  int clrIndex = 0;
+  char charsFormat[10];
+
+  if(clrCnt > img->ncolors ||
+     clrCnt > pow(2, img->chrperpixel * 8) - 1) return;
+
+  for(clrIndex = 1; clrIndex <= clrCnt; clrIndex ++){
+    /* load RGB values */
+    clrData.clr.red = vColors[clrIndex - 1][0];
+    clrData.clr.green = vColors[clrIndex - 1][1];
+    clrData.clr.blue = vColors[clrIndex - 1][2];
+
+    /* load dynamic data */
+    clrData.key = (char *)malloc(2 * sizeof(char));
+    strcpy(clrData.key, "c");
+    clrData.chars = (char *)malloc((1 + img->chrperpixel) * sizeof(char));
+
+    /* load formated pixel chars */
+    switch(img->chrperpixel){
+    case 1:
+      if(clrCnt <= 0x0F) sprintf(clrData.chars, "%1X", clrIndex);
+      else sprintf(clrData.chars, "%c", clrIndex);
+      break;
+    default:
+      sprintf(charsFormat, "%%0%dX", img->chrperpixel);
+      sprintf(clrData.chars, charsFormat, clrIndex);
+      break;
+    }
+
+    setXPMColor(img, clrIndex - 1, clrData);
+  }
+}
+
+static void
+bresenhamX (XPM *canvas, Point q, Point r, int symmetry, unsigned short clrIndex)
+{
+    int dx, dy, D, x, y;
+    dx = r.x - q.x;
+    if (symmetry == ASYMMETRIC)
+        dy = r.y - q.y;
+    else dy = q.y - r.y;
+    D = 2*dy - dx;
+    y = q.y;
+    for (x = q.x; x <= r.x; x++)
+    {
+      putXPMpixel(canvas, x, canvas->height - y, clrIndex);
+        if (D <= 0) D += 2 * dy;
+        else
+        {
+            D += 2*(dy - dx);
+            if(symmetry == ASYMMETRIC)
+                y++;
+            else y--;
+        }
+    }
+}
+
+static void
+bresenhamY (XPM *canvas, Point q, Point r, int symmetry, unsigned short clrIndex)
+{
+    int dx, dy, D, x, y;
+    if(symmetry == ASYMMETRIC)
+        dx = r.x - q.x;
+    else dx = q.x - r.x;
+    dy = r.y - q.y;
+    D = 2*dx - dy;
+    x = q.x;
+    for (y = q.y; y <= r.y; y++)
+    {
+        putXPMpixel(canvas, x, canvas->height - y, clrIndex);
+        if (D <= 0) D += 2 * dx;
+        else
+        {
+            D += 2*(dx - dy);
+            if(symmetry == ASYMMETRIC)
+                x++;
+            else x--;
+        }
+    }
+}
+
+void
+drawBresenhamLine(XPM *canvas, Point pStart, Point pEnd, unsigned short colorIndex)
+{
+    if(pEnd.x > pStart.x &&
+       pEnd.y >= pStart.y &&
+       (pEnd.x - pStart.x) >= (pEnd.y - pStart.y))
+        //octant 1
+    {
+        bresenhamX(canvas,pStart,pEnd,ASYMMETRIC,colorIndex);
+    }
+    else if(pEnd.x >= pStart.x &&
+	    pEnd.y > pStart.y &&
+	    (pEnd.x - pStart.x) < (pEnd.y - pStart.y))
+        //octant 2
+    {
+        bresenhamY(canvas,pStart,pEnd,ASYMMETRIC,colorIndex);
+    }
+    else if(pEnd.x < pStart.x &&
+	    pEnd.y > pStart.y &&
+	    (pStart.x - pEnd.x) < (pEnd.y - pStart.y))
+        //octant 3
+    {
+        bresenhamY(canvas,pStart,pEnd,SYMMETRIC,colorIndex);
+    }
+    else if(pEnd.x < pStart.x &&
+	    pEnd.y >= pStart.y &&
+	    (pStart.x - pEnd.x) >= (pEnd.y - pStart.y))
+        //octant 4
+    {
+        bresenhamX(canvas,pEnd,pStart,SYMMETRIC,colorIndex);
+    }
+    else if (pEnd.x < pStart.x &&
+	     pEnd.y < pStart.y &&
+	     (pStart.x - pEnd.x) >= (pStart.y - pEnd.y))
+        //octant 5
+    {
+        bresenhamX(canvas,pEnd,pStart,ASYMMETRIC,colorIndex);
+    }
+    else if (pEnd.x <= pStart.x &&
+	     pEnd.y < pStart.y &&
+	     (pStart.x - pEnd.x) < (pStart.y - pEnd.y))
+        //octant 6
+    {
+        bresenhamY(canvas,pEnd,pStart,ASYMMETRIC,colorIndex);
+    }
+    else if(pEnd.x > pStart.x &&
+	    pEnd.y < pStart.y &&
+	    (pEnd.x - pStart.x) <= (pStart.y - pEnd.y))
+        //octant 7
+    {
+        bresenhamY(canvas,pEnd,pStart,SYMMETRIC,colorIndex);
+    }
+    else //octant 8
+    {
+        bresenhamX(canvas,pStart,pEnd,SYMMETRIC,colorIndex);
+    }
+}
+
+void drawFilledPoly(XPM *canvas, struct Polygon *poly, unsigned short colorIndex)
+{
+    int index;
+    //struct Polygon *toBeClippedLast = poly->prev;
+    int xmin = 32000, xmax = 0, ymin = 32000, ymax = 0;
+    struct Polygon *v1, *v2, *v3, *v4;
+    struct Segment S1, S2;
+    Point I0;
+    Point I1;
+    Point Start, End;
+    struct Polygon *intersectionLast = NULL;
+    struct Polygon *intersection = NULL;
+
+    /* compute the extreme values */
+    v1 = poly;
+    do{
+        if(v1->P.x > xmax) xmax = v1->P.x;
+        if(v1->P.x < xmin) xmin = v1->P.x;
+        if(v1->P.y > ymax) ymax = v1->P.y;
+        if(v1->P.y < ymin) ymin = v1->P.y;
+        v1 = v1->next;
+    } while(v1 != poly);
+
+    /* fill poly */
+    v1 = poly;
+    v2 = v1->next;
+    Start.x = xmin;
+    End.x = xmax;
+    for(index = ymin; index <= ymax; index ++)
+        {
+            intersectionLast = intersection = NULL;
+            do{
+                         S1.P0 = v1->P;
+                         S1.P1 = v2->P;
+                         Start.y = End.y = index;
+                         S2.P0 = Start;
+                         S2.P1 = End;
+                         if(intersect2D_Segments(S1, S2, &I0, &I1) == 1) //ignore horizontal lines (2)
+                            {
+                                 I0.y = index;
+                                 addPtNodeToList(&intersection, &intersectionLast, I0);
+                            }
+                 v1 = v2;
+                 v2 = v2->next;
+              }while(v1 != poly);
+
+            if(NULL != intersection) {
+              sortPointsOverX(intersection);
+              v3 = intersection;
+              v4 = v3->next;
+              if(v3 != v4) /* is there more then one point in list? */
+              do{drawBresenhamLine(canvas, v3->P, v4->P, colorIndex);
+                v3 = v4->next;
+                v4 = v4->next->next;
+              }while(v3!=intersection);
+              freePointList(&intersection);
+            }
+       }
+}
+
+void
+drawSimplePoly(XPM *canvas, struct Polygon *poly, unsigned short colorIndex) {
+  struct Polygon *ptn = NULL;
+
+  if(NULL != poly) {
+	ptn = poly;
+  do {
+    drawBresenhamLine(canvas, ptn->P, ptn->next->P, colorIndex);
+    ptn = ptn->next;
+  } while(poly != ptn);
+  }
+}

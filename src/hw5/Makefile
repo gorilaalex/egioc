@@ -13,10 +13,10 @@ hw4: all
 	./$(PRJNAME) -f test2.ps -w 200 -h 200 -t transf.tsf -o out.xpm
 
 hw5_sh: DIFLAGS = -DPOLY_SH_CLIP
-hw5_sh: all
+hw5_sh: clean all
 
 hw5_wa: DIFLAGS = -DPOLY_WA_CLIP
-hw5_wa: all
+hw5_wa: clean all
 
 run_hw5_sh: all
 	./$(PRJNAME) -f insh.pol -w 200 -h 200 -wl 12 -wt 70 -wr 150 -wb 2 -o out.xpm
