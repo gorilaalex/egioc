@@ -4,7 +4,6 @@
 #include <math.h>
 
 #include "datatypes.h"
-#include "pointops.h"
 #include "bezier.h"
 #include "xpm.h"
 
@@ -50,8 +49,7 @@ int main(int argc, char *argv[])
   Region window = {200, 0, 0, 200};
 
   char *fileInput = NULL;
-  Point *bzPts = NULL;
-  unsigned int bzPtsCnt = 0;
+  PointVector bzPts = {NULL, 0};
   XPM *img = NULL;
   
   struct option options[] = {
@@ -117,11 +115,13 @@ int main(int argc, char *argv[])
   assignXPMColorTable(img, clrTable, sizeof(clrTable)/(sizeof(unsigned char) * 3));
 
   printf("Loading, processing and rendering the Bezier curve...\n");
-  bzPtsCnt = loadBZEFile(fileInput, &bzPts);
+  bzPts = loadBZEFile(fileInput);
+  printPtVector(bzPts);
   printf("Outputting data to XPM file...\n");
   saveXPMtofile(img, xpmOut);
 
   printf("Free memory structures...\n");
+  freePtVector(bzPts);
   freeXPM(&img);
   return 0;
 }

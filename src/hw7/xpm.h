@@ -6,7 +6,6 @@
 #include <string.h>
 
 #include "datatypes.h"
-#include "pointops.h"
 #include "transforms.h"
 
 /* Initialize a XPM structure with custom

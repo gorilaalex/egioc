@@ -4,11 +4,7 @@
 #include <float.h>
 #include <math.h>
 
-#include "pointops.h"
 #include "datatypes.h"
-
-extern int
-intersect2D_Segments(struct Segment, struct Segment, Point*, Point*);
 
 extern void
 initTranslation(struct transMatrix *, double, double);

@@ -18,6 +18,11 @@ typedef struct
     int x,y;
 }Point;
 
+typedef struct {
+  Point *v;
+  unsigned int length;
+} PointVector;
+
 struct Segment
 {
     Point P0, P1;
