@@ -50,6 +50,7 @@ int main(int argc, char *argv[])
 
   char *fileInput = NULL;
   PointVector bzPts = {NULL, 0};
+  double bzStep = 0.05;
   XPM *img = NULL;
   
   struct option options[] = {
@@ -61,6 +62,7 @@ int main(int argc, char *argv[])
     {"-w",  1, 0, 0},
     {"-h",  1, 0, 0},
     {"-o",  1, 0, 0},
+    {"-p",  1, 1, 0},
     {0,    0,  0, 0}
   };
 
@@ -93,6 +95,8 @@ int main(int argc, char *argv[])
 	  optHeight = atoi(argv[argIndex + 1]);
 	} else if(strcmp(argv[argIndex], "-o") == 0){
 	  xpmOut = argv[argIndex + 1];
+	} else if(strcmp(argv[argIndex], "-p") == 0){
+	  bzStep = atof(argv[argIndex + 1]);
 	} else {
 	  fprintf(stderr, "Option not handled yet!\n");
 	}
