@@ -4,14 +4,14 @@ CC = gcc
 DIFLAGS =
 CFLAGS = -Wall -g $(DIFLAGS)
 LDFLAGS = -lm
-OBJS = bezier.o transforms.o xpm.o
+OBJS = bezier.o xpm.o
 
 #!!! you shouldn't modify anything beyond this point
 all: $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) main.c -o $(PRJNAME) $(LDFLAGS)
 
 test: all
-	./$(PRJNAME) -i in.bze -w 200 -h 200 -o out.xpm -p 0.2
+	./$(PRJNAME) -i in.bze -w 200 -h 200 -o out.xpm -p 0.06
 
 
 ./%.o: ./%.c

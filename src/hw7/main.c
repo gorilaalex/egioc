@@ -16,7 +16,7 @@ struct option{
 
 void
 printUsage(void){
-  printf("Usage: fillpoly <options>\n"
+  printf("Usage: Bezier curves <options>\n"
 	 "Where <options> is a combination of the following values (order doesn't matter):\n"
 	 "-i <bze_input_file> : BeZiEr point file\n"
 	 "-w <output_width>  : desired output width of image\n"
@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
   PointVector bzPts = {NULL, 0};
   double bzStep = 0.05;
   XPM *img = NULL;
-  
+
   struct option options[] = {
     {"-wt", 1, 1, 0},
     {"-wl", 1, 1, 0},
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
 
   printf("Loading, processing and rendering the Bezier curve...\n");
   bzPts = loadBZEFile(fileInput);
-  printPtVector(bzPts);
+  bezierCurve(img, bzPts, bzStep);
   printf("Outputting data to XPM file...\n");
   saveXPMtofile(img, xpmOut);
 

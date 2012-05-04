@@ -6,7 +6,6 @@
 #include <string.h>
 
 #include "datatypes.h"
-#include "transforms.h"
 
 /* Initialize a XPM structure with custom
  * width, height, characters/pixel and number of colors
