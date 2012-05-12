@@ -5,6 +5,7 @@
 
 #include "datatypes.h"
 #include "xpm.h"
+#include "3dops.h"
 
 struct option{
   char *name;
@@ -35,7 +36,7 @@ int main(int argc, char *argv[])
 
   unsigned char clrTable[][3] = {
     {255, 255, 255}, /* colorIndex = 0 : WHITE */
-    {0, 0, 0}       /* colorIndex = 1 : BLACK */
+    {0, 0, 0}        /* colorIndex = 1 : BLACK */
   };
   int isClipSet = 0;
   char *xpmOut = NULL;
@@ -46,6 +47,8 @@ int main(int argc, char *argv[])
   char *fileOBJInput = NULL;
   char *fileVWInput = NULL;
   XPM *img = NULL;
+  SpaceObjData fileInputData;
+  SpaceViewSettings vwSett;
 
   struct option options[] = {
     {"-f",  1, 0, 0},
@@ -92,15 +95,16 @@ int main(int argc, char *argv[])
   assignXPMdisplayRegion(img, window.windowLeft, window.windowTop, window.windowRight, window.windowBottom);
   assignXPMColorTable(img, clrTable, sizeof(clrTable)/(sizeof(unsigned char) * 3));
 
-  printf("Loading OBJ and VW data ..., processing and rendering the Bezier curve...\n");
-  //bzPts = loadBZEFile(fileInput);
-  //bezierCurve(img, bzPts, bzStep);
+  printf("Loading OBJ and VW data ...\n");
+  fileInputData = loadOBJFile(fileOBJInput);
+  vwSett = loadVWFile(fileVWInput);
+  /* TODO: add clipping and rendering functions */
 
   printf("Outputting data to XPM file...\n");
   saveXPMtofile(img, xpmOut);
 
   printf("Free memory structures...\n");
-  //freePtVector(bzPts);
+  freeOBJFile(fileInputData);
   freeXPM(&img);
   return 0;
 }

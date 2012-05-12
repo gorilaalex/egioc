@@ -159,7 +159,7 @@ assignXPMColorTable(XPM *img, unsigned char vColors[][3], int clrCnt){
 }
 
 static void
-bresenhamX (XPM *canvas, Point q, Point r, int symmetry, unsigned short clrIndex)
+bresenhamX (XPM *canvas, PlanePoint q, PlanePoint r, int symmetry, unsigned short clrIndex)
 {
     int dx, dy, D, x, y;
     dx = r.x - q.x;
@@ -183,7 +183,7 @@ bresenhamX (XPM *canvas, Point q, Point r, int symmetry, unsigned short clrIndex
 }
 
 static void
-bresenhamY (XPM *canvas, Point q, Point r, int symmetry, unsigned short clrIndex)
+bresenhamY (XPM *canvas, PlanePoint q, PlanePoint r, int symmetry, unsigned short clrIndex)
 {
     int dx, dy, D, x, y;
     if(symmetry == ASYMMETRIC)
@@ -207,7 +207,7 @@ bresenhamY (XPM *canvas, Point q, Point r, int symmetry, unsigned short clrIndex
 }
 
 void
-drawBresenhamLine(XPM *canvas, Point pStart, Point pEnd, unsigned short colorIndex)
+drawBresenhamLine(XPM *canvas, PlanePoint pStart, PlanePoint pEnd, unsigned short colorIndex)
 {
     if(pEnd.x > pStart.x &&
        pEnd.y >= pStart.y &&
@@ -265,8 +265,8 @@ drawBresenhamLine(XPM *canvas, Point pStart, Point pEnd, unsigned short colorInd
 }
 
 void
-drawSimplePoly(XPM *canvas, struct Polygon *poly, unsigned short colorIndex) {
-  struct Polygon *ptn = NULL;
+drawSimplePoly(XPM *canvas, struct PlanePolygon *poly, unsigned short colorIndex) {
+  struct PlanePolygon *ptn = NULL;
 
   if(NULL != poly) {
 	ptn = poly;

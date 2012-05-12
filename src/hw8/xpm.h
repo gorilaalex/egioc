@@ -45,9 +45,9 @@ assignXPMColorTable(XPM *img, unsigned char vColors[][3], int clrCnt);
 
 /* Draws a line onto the XPM image using Bresenham' algorithm */
 extern void
-drawBresenhamLine(XPM *canvas, Point pStart, Point pEnd, unsigned short colorIndex);
+drawBresenhamLine(XPM *canvas, PlanePoint pStart, PlanePoint pEnd, unsigned short colorIndex);
 
 void
-drawSimplePoly(XPM *canvas, struct Polygon *poly, unsigned short colorIndex);
+drawSimplePoly(XPM *canvas, struct PlanePolygon *poly, unsigned short colorIndex);
 
 #endif // XPM_H_INCLUDED

@@ -4,7 +4,7 @@ CC = gcc
 DIFLAGS =
 CFLAGS = -Wall -g $(DIFLAGS)
 LDFLAGS = -lm
-OBJS = xpm.o
+OBJS = xpm.o 3dops.o
 
 TESTS_ARGS = -w 200 -h 200
 
