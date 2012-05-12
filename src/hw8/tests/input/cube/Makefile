@@ -1,4 +1,5 @@
 3DVIEW_PATH := ../../../view3D
+TESTS_ARGS = -w 200 -h 200
 
 all:
 	$(3DVIEW_PATH) $(TESTS_ARGS) -f cube.obj -viz 0cube.vw -o 0cube.xpm
