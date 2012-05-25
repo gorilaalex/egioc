@@ -68,9 +68,9 @@ typedef struct {
   unsigned int length;
 } PlanePointVector;
 
-struct PlaneSegment {
+typedef struct {
     PlanePoint P0, P1;
-};
+} PlaneSegment;
 
 typedef struct
 {

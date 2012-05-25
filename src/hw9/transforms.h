@@ -70,4 +70,7 @@ twoDCoord(PlanePoint *, PlaneHomoCoord);
 extern PlanePoint 
 pointToViewport(Region, Region, PlanePoint);
 
+extern int 
+intersect2D_Segments(PlaneSegment, PlaneSegment, PlanePoint *, PlanePoint *);
+
 #endif // TRANSFORMS_H_INCLUDED

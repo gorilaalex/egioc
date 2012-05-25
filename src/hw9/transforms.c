@@ -1,5 +1,125 @@
 #include "transforms.h"
 
+static int 
+inSegment(PlanePoint P, PlaneSegment S)
+{
+    if (S.P0.x != S.P1.x)
+    {
+        if (S.P0.x <= P.x && P.x <= S.P1.x) return 1;
+        if (S.P0.x >= P.x && P.x >= S.P1.x) return 1;
+    }
+    else
+    {
+        if (S.P0.y <= P.y && P.y <= S.P1.y) return 1;
+        if (S.P0.y >= P.y && P.y >= S.P1.y) return 1;
+    }
+
+    return 0;
+}
+
+static PlanePoint 
+planePtVectorAdd(PlanePoint P, PlaneVector v)
+{
+    P.x += v.x;
+    P.y += v.y;
+
+    return P;
+}
+
+static PlaneVector 
+scalarVectorMul(float s, PlaneVector v)
+{
+    v.x *=s;
+    v.y *=s;
+
+    return v;
+}
+
+static PlaneVector 
+planePtDifference(PlanePoint A, PlanePoint B)
+{
+    PlaneVector v;
+    v.x = A.x - B.x;
+    v.y = A.y - B.y;
+
+    return v;
+}
+
+int 
+intersect2D_Segments(PlaneSegment S1, PlaneSegment S2, PlanePoint *I0, PlanePoint *I1) {
+    PlaneVector u = planePtDifference(S1.P1, S1.P0);
+    PlaneVector v = planePtDifference(S2.P1, S2.P0);
+    PlaneVector w = planePtDifference(S1.P0, S2.P0);
+    float D = perp(u,v);
+
+    if (fabs(D) < DBL_MIN)
+    {
+        if (perp(u,w) != 0 || perp(v,w) != 0) return 0;
+
+        float du = dot(u,u);
+        float dv = dot(v,v);
+        if ((du < 1e-7) && (dv < 1e-7))
+        {
+            if (!ptEquals(S1.P0, S2.P0))
+                return 0;
+            *I0 = S1.P0;
+            return 1;
+        }
+        if (du < 1e-7)
+        {
+            if (inSegment(S1.P0, S2) == 0)
+                return 0;
+            *I0 = S1.P0;
+            return 1;
+        }
+        if (dv < 1e-7)
+        {
+            if (inSegment(S2.P0, S1) == 0)
+                return 0;
+            *I0 = S2.P0;
+            return 1;
+        }
+
+        float t0, t1;
+        PlaneVector w2 = planePtDifference(S1.P1, S2.P0);
+        if (v.x > 1e-7)
+        {
+            t0 = w.x / v.x;
+            t1 = w2.x / v.x;
+        }
+        else
+        {
+            t0 = w.y / v.y;
+            t1 = w2.y / v.y;
+        }
+        if (fabs(t0 - t1) < 1e-7)
+        {
+            float t=t0;
+            t0=t1;
+            t1=t;
+        }
+        if (t0 > 1 || t1 < 0) return 0;
+
+        t0 = t0<0? 0.0 : t0;
+        t1 = t1>1? 1.0 : t1;
+        if (fabs(t0 - t1) < 1e-7)
+        {
+            *I0 = planePtVectorAdd(S2.P0, scalarVectorMul(t0, v));
+            return 1;
+        }
+        *I0 = planePtVectorAdd(S2.P0, scalarVectorMul(t0, v));
+        *I1 = planePtVectorAdd(S2.P0, scalarVectorMul(t1, v));
+        return 2;
+    }
+    float sI = perp(v,w) / D;
+    if (sI < 0 || sI > 1) return 0;
+    float tI = perp(u,w) / D;
+    if (tI < 0 || tI > 1) return 0;
+    *I0 = planePtVectorAdd(S1.P0, scalarVectorMul(sI, u));
+
+    return 1;
+}
+
 void
 initSHTranslation(SpaceHomoMatrix *m, double tx, double ty, double tz)
 {
