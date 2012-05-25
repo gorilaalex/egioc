@@ -372,3 +372,12 @@ PlanePoint pointToViewport(Region window, Region viewport, PlanePoint point) {
 
   return point;
 }
+
+PlanePoint 
+project2DPoint(SpacePoint pt, SpaceViewSettings space) {
+  PlanePoint resPt;
+
+  /* TODO: Fill this function with the projection of 'pt' to the 'space' structure */
+
+  return resPt;
+}

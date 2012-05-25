@@ -46,13 +46,20 @@ ZBuffer *
 newZBuffer(unsigned int width, unsigned int height) {
   ZBuffer *zb = NULL;
 
+  zb = (ZBuffer *)malloc(sizeof(ZBuffer));
   zb->height = height;
   zb->width = width;
-  zb->data = (unsigned short **)malloc(zb->height * sizeof(unsigned short *));
+  zb->minz = DBL_MAX;
+  zb->maxz = DBL_MIN;
+  zb->data = (int **)malloc(zb->height * sizeof(int *));
 
-  int cnt;
-  for(cnt = 0; cnt < zb->height; ++cnt){
-    zb->data[cnt] = (unsigned short *)calloc(zb->width, sizeof(unsigned short));
+  int rowId;
+  int colId;
+  for(rowId = 0; rowId < zb->height; ++rowId){
+    zb->data[rowId] = (int *)calloc(zb->width, sizeof(int));
+    for(colId = 0; colId < zb->width; ++colId){
+      zb->data[rowId][colId] = INT_MIN;
+    }
   }
 
   return zb;

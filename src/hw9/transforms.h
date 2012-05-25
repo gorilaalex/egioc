@@ -73,4 +73,7 @@ pointToViewport(Region, Region, PlanePoint);
 extern int 
 intersect2D_Segments(PlaneSegment, PlaneSegment, PlanePoint *, PlanePoint *);
 
+extern PlanePoint 
+project2DPoint(SpacePoint, SpaceViewSettings);
+
 #endif // TRANSFORMS_H_INCLUDED

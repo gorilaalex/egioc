@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <limits.h>
+#include <float.h>
 
 #include "datatypes.h"
 
@@ -63,7 +65,7 @@ assignXPMColorTable(XPM *img, unsigned char vColors[][3], int clrCnt);
 extern void
 drawBresenhamLine(XPM *canvas, PlanePoint pStart, PlanePoint pEnd, unsigned short colorIndex);
 
-void
+extern void
 drawSimplePoly(XPM *canvas, struct PlanePolygon *poly, unsigned short colorIndex);
 
 extern void

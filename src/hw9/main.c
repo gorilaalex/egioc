@@ -36,7 +36,22 @@ int main(int argc, char *argv[])
 
   unsigned char clrTable[][3] = {
     {255, 255, 255}, /* colorIndex = 0 : WHITE */
-    {0, 0, 0}        /* colorIndex = 1 : BLACK */
+    {239, 239, 239}, /* 15 steps of gray */
+    {223, 223, 223},
+    {207, 207, 207},
+    {191, 191, 191},
+    {175, 175, 175},
+    {159, 159, 159},
+    {143, 143, 143},
+    {127, 127, 127},
+    {111, 111, 239},
+    { 95,  95,  95},
+    { 79,  79,  79},
+    { 63,  63,  63},
+    { 47,  47,  47},
+    { 31,  31,  31},
+    { 15,  15,  15},
+    {0, 0, 0}        /* colorIndex = 16 : BLACK */
   };
 
   char *xpmOut = NULL;
@@ -90,14 +105,13 @@ int main(int argc, char *argv[])
   viewport.windowLeft = 0;
   viewport.windowRight = optWidth;
   
-  printf("Initializing XPM and ZBuffer structure...\n");
+  DBG("Initializing XPM and the ZBuffer structure...\n");
   img = newXPM(optWidth, optHeight, 1, sizeof(clrTable)/(sizeof(unsigned char) * 3));
+  izb = newZBuffer(optWidth, optHeight);
   assignXPMdisplayRegion(img, viewport.windowLeft, viewport.windowTop, viewport.windowRight,   viewport.windowBottom);
   assignXPMColorTable(img, clrTable, sizeof(clrTable)/(sizeof(unsigned char) * 3));
 
-  izb = newZBuffer(optWidth, optHeight);
-
-  printf("Loading OBJ and VW data ...\n");
+  DBG("Loading OBJ and VW data ...\n");
   fileInputData = loadOBJFile(fileOBJInput);
   vwSett = loadVWFile(fileVWInput);
   window.windowTop = vwSett.UVMAXy;
@@ -105,12 +119,14 @@ int main(int argc, char *argv[])
   window.windowLeft = vwSett.UVMINx;
   window.windowRight = vwSett.UVMAXx;
   
-  printf("3D to 2D projecting data ...\n");
-  project(img, vwSett, fileInputData, window, viewport);
-  printf("Outputting data to XPM file...\n");
+  DBG("Computing the ZBuffer and projecting the image ...\n");
+  computeZBuffer(img, izb, vwSett, fileInputData, window, viewport);
+  projectZBuffer(img, izb, 1, 16);
+
+  DBG("Outputting data to XPM file...\n");
   saveXPMtofile(img, xpmOut);
 
-  printf("Free memory structures...\n");
+  DBG("Free memory structures...\n");
   freeOBJFile(fileInputData);
   freeXPM(&img);
   freeZBuffer(&izb);

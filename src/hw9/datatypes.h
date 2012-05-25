@@ -16,12 +16,23 @@
  #define DBG(...) 
 #endif
 
+#define SWAP_PLANEPT(x,y) do {   \
+   PlanePoint z = x;  \
+   x = y; \
+   y = z; \
+ } while(0)
+
 #define dot(u,v)   ((u).x * (v).x + (u).y * (v).y)
 #define perp(u,v)  ((u).x * (v).y - (u).y * (v).x)
 
 #define PI 3.14159265
 
 /* 3D data declaration region */
+typedef struct {
+  /* A*x + B*y + C*z + D = 0 */
+  double A, B, C, D;
+} PlaneCoefficients;
+
 typedef struct {
     float x, y, z;
 } SpacePoint;
@@ -117,9 +128,11 @@ typedef struct {
 } XPM;
 
 typedef struct {
+  double maxz;
+  double minz;
   unsigned int width;
   unsigned int height;
-  unsigned short **data;
+  int **data;
 } ZBuffer;
 
 typedef struct {

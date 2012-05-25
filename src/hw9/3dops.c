@@ -236,3 +236,129 @@ loadVWFile(const char *fName) {
 
   return vwSett;
 }
+
+static int 
+isPtInTriangle(PlanePoint pt, PlanePoint ptTr1, PlanePoint ptTr2, PlanePoint ptTr3) {
+  /* Applied the theory from here : http://mathworld.wolfram.com/TriangleInterior.html
+     where : v = pt, v0 = ptTr1, v1 = ptTr2, v2 = ptTr3 and det(U, V) = Ux * Vy - Uy * Vx */
+
+  double a =  ((pt.x * ptTr3.y - pt.y * ptTr3.x) - (ptTr1.x * ptTr3.y - ptTr1.y * ptTr3.x)) / 
+               (ptTr2.x * ptTr3.y - ptTr2.y * ptTr3.x); 
+  double b = -((pt.x * ptTr2.y - pt.y * ptTr2.x) - (ptTr1.x * ptTr2.y - ptTr1.y * ptTr2.x)) /
+               (ptTr2.x * ptTr3.y - ptTr2.y * ptTr3.x); 
+
+  if(a > 0 && b > 0 && (a + b) < 1) return 1;
+
+  return 0;
+}
+
+static double 
+computez(PlanePoint pt, PlaneCoefficients pcoeffs) {
+  double z = 0.0;
+
+  if (pcoeffs.B > 1e-7) z = (-pcoeffs.A * pt.x - pcoeffs.C * pt.y - pcoeffs.D) / pcoeffs.B;
+
+  return z;
+}
+
+static PlaneCoefficients
+computeCoeffOfPlane(SpacePoint pt1, SpacePoint pt2, SpacePoint pt3) {
+  /* Followed this judgement for finding the plane's coefficients : http://en.wikipedia.org/wiki/Plane_%28geometry%29#Method_3 */
+  PlaneCoefficients ccoef;
+
+  ccoef.A = (pt2.z - pt3.z) * (pt1.y - pt2.y) - (pt1.z - pt2.z) * (pt2.y - pt3.y);
+  ccoef.B = (pt2.x - pt3.x) * (pt1.z - pt2.z) - (pt1.x - pt2.x) * (pt2.z - pt3.z);
+  ccoef.C = (pt2.y - pt3.y) * (pt1.x - pt2.x) - (pt1.y - pt2.y) * (pt2.x - pt3.x);
+  ccoef.D = - pt1.x * (pt2.y * pt3.z - pt2.z * pt3.y) + pt1.y * (pt2.x * pt3.z - pt2.z * pt3.x) - pt1.z * (pt2.x * pt3.y - pt2.y * pt3.x);
+  
+  return ccoef; 
+}
+
+void
+computeZBuffer(XPM *canvas, ZBuffer *zb, SpaceViewSettings space, SpaceObjData data, Region window, Region viewport) {
+  int id;
+  int xmin, xmax;
+  int ymin, ymax;
+  PlaneCoefficients currentPlCoeffs;
+  SpacePoint trPt1, trPt2, trPt3;
+  PlanePoint trPlanePt1, trPlanePt2, trPlanePt3;
+  PlanePoint pt;
+  int xrect, yrect;
+  int zval;
+
+  for(id = 0; id < data.trigs.length; ++id) {
+    /* get the 3D triangle points */
+    trPt1 = data.pts.v[data.trigs.v[id].fId - 1];
+    trPt2 = data.pts.v[data.trigs.v[id].sId - 1];
+    trPt3 = data.pts.v[data.trigs.v[id].tId - 1];
+
+    /* compute the projection on the 2D surface given by SpaceViewSettings */
+    trPlanePt1 = project2DPoint(trPt1, space);
+    trPlanePt2 = project2DPoint(trPt2, space);
+    trPlanePt3 = project2DPoint(trPt3, space);
+
+    /* blit the point to viewport */
+    trPlanePt1 = pointToViewport(window, viewport, trPlanePt1);
+    trPlanePt2 = pointToViewport(window, viewport, trPlanePt2);
+    trPlanePt3 = pointToViewport(window, viewport, trPlanePt3);
+
+    /* compute the minimum required holding rectangle for the current triangle */
+    xmax = ymax = INT_MIN;
+    xmin = ymin = INT_MAX;
+    /* compute xmax */
+    if(trPlanePt1.x > xmax) xmax = trPlanePt1.x;
+    if(trPlanePt2.x > xmax) xmax = trPlanePt2.x;
+    if(trPlanePt3.x > xmax) xmax = trPlanePt3.x;
+    /* compute xmin */
+    if(trPlanePt1.x < xmin) xmin = trPlanePt1.x;
+    if(trPlanePt2.x < xmin) xmin = trPlanePt2.x;
+    if(trPlanePt3.x < xmin) xmin = trPlanePt3.x;
+    /* compute ymax */
+    if(trPlanePt1.y > ymax) ymax = trPlanePt1.y;
+    if(trPlanePt2.y > ymax) ymax = trPlanePt2.y;
+    if(trPlanePt3.y > ymax) ymax = trPlanePt3.y;
+    /* compute ymin */
+    if(trPlanePt1.y < ymin) ymin = trPlanePt1.y;
+    if(trPlanePt2.y < ymin) ymin = trPlanePt2.y;
+    if(trPlanePt3.y < ymin) ymin = trPlanePt3.y;
+
+    /* compute and fill zbuffer */
+    currentPlCoeffs = computeCoeffOfPlane(trPt1, trPt2, trPt3);
+    for(xrect = xmin; xrect < xmax; ++xrect) {
+      for(yrect = ymin; yrect < ymax; ++yrect) {
+        pt.x = xrect;
+        pt.y = yrect;
+        if(isPtInTriangle(pt, trPlanePt1, trPlanePt2, trPlanePt3) != 0) {
+          zval = computez(pt, currentPlCoeffs);
+          if(zval > zb->data[yrect][xrect]) {
+            zb->data[yrect][xrect] = zval;
+            if(zval > zb->maxz) zb->maxz = zval;
+            else if(zval < zb->minz) zb->minz = zval;
+            //putXPMpixel(canvas, xrect, yrect, 1);
+          }
+        }
+      }
+    }
+  }
+}
+
+void 
+projectZBuffer(XPM *canvas, ZBuffer *zb, unsigned short clrBase, unsigned short clrShadeCnt) {
+  assert(clrShadeCnt != 0);
+
+  double absMinz = fabs(zb->minz);
+  int clrIncrement = (int)((absMinz + fabs(zb->maxz))/clrShadeCnt);
+  double absZData;
+  int xpix, ypix;
+  int clrOffset;
+
+  for(ypix = 0; ypix < zb->height; ++ypix) {
+    for(xpix = 0; xpix < zb->width; ++xpix) {
+      absZData = fabs(zb->data[ypix][xpix]);
+      if(absZData - absMinz > 1e-7) {
+        clrOffset = (int)(absZData + absMinz) / clrIncrement;
+        putXPMpixel(canvas, xpix, ypix, clrBase + clrOffset);
+      } 
+    }
+  }
+}

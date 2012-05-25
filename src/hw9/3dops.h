@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 #include "datatypes.h"
 #include "xpm.h"
@@ -15,15 +16,22 @@
 #define DEFINE_TRIANGLE 'f'
 #define PT_REALLOC_STEP 5
 
-SpaceObjData
+extern SpaceObjData
 loadOBJFile(const char *);
 
-void
+extern void
 freeOBJFile(SpaceObjData );
 
-SpaceViewSettings
+extern SpaceViewSettings
 loadVWFile(const char *);
 
-void
+extern void
 project(XPM *, SpaceViewSettings, SpaceObjData, Region, Region);
+
+extern void
+computeZBuffer(XPM *, ZBuffer *, SpaceViewSettings, SpaceObjData, Region, Region);
+
+extern void 
+projectZBuffer(XPM *, ZBuffer *, unsigned short, unsigned short);
+
 #endif
