@@ -8,6 +8,14 @@
 #define WINDOWLEFT 0
 #define WINDOWBOTTOM 0
 
+//#define _DEBUG_
+
+#ifdef _DEBUG_
+ #define DBG(...) printf(__VA_ARGS__)
+#else
+ #define DBG(...) 
+#endif
+
 #define dot(u,v)   ((u).x * (v).x + (u).y * (v).y)
 #define perp(u,v)  ((u).x * (v).y - (u).y * (v).x)
 
@@ -15,12 +23,12 @@
 
 /* 3D data declaration region */
 typedef struct {
-    double x, y, z;
+    float x, y, z;
 } SpacePoint;
 
 typedef struct {
   SpacePoint *v;
-  unsigned int length;
+  int length;
 } SpacePointVector;
 
 typedef struct {
@@ -40,19 +48,19 @@ typedef struct {
 } SpaceObjData;
 
 typedef struct {
-  SpacePoint VRP;
+  SpacePoint VRP;  
   SpacePoint VPN;
   SpacePoint VUP;
   SpacePoint PRP;
-  double UVMINx, UVMINy;
-  double UVMAXx, UVMAXy;
+  float UVMINx, UVMINy;
+  float UVMAXx, UVMAXy;
   int PTYPE;
 } SpaceViewSettings;
 
 /* ending of 3D data declaration region */
 
 typedef struct {
-    int x,y;
+   float x,y;
 } PlanePoint;
 
 typedef struct {
@@ -77,10 +85,10 @@ struct PlanePolygon
 };
 
 typedef struct {
-  int windowTop;
-  int windowLeft;
-  int windowBottom;
-  int windowRight;
+  float windowTop;
+  float windowLeft;
+  float windowBottom;
+  float windowRight;
 } Region;
 
 /* Color structure that holds pixel data */
@@ -113,7 +121,7 @@ struct transMatrix {
 };
 
 struct homoCoord {
-  int coord[3];
+  float coord[3];
 };
 
 enum { TOP = 0x1, BOTTOM = 0x2, RIGHT = 0x4, LEFT = 0x8 };

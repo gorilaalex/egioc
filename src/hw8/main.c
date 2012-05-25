@@ -38,11 +38,12 @@ int main(int argc, char *argv[])
     {255, 255, 255}, /* colorIndex = 0 : WHITE */
     {0, 0, 0}        /* colorIndex = 1 : BLACK */
   };
-  int isClipSet = 0;
+
   char *xpmOut = NULL;
   int optWidth = 200;
   int optHeight = 200;
-  Region window = {200, 0, 0, 200};
+  Region viewport;
+  Region window;
 
   char *fileOBJInput = NULL;
   char *fileVWInput = NULL;
@@ -83,23 +84,26 @@ int main(int argc, char *argv[])
     }
   }
 
-  if(0 == isClipSet) {
-    window.windowTop = optHeight;
-    window.windowBottom = 0;
-    window.windowLeft = 0;
-    window.windowRight = optWidth;
-  }
-
+  viewport.windowTop = optHeight;
+  viewport.windowBottom = 0;
+  viewport.windowLeft = 0;
+  viewport.windowRight = optWidth;
+  
   printf("Initializing XPM structure...\n");
   img = newXPM(optWidth, optHeight, 1, sizeof(clrTable)/(sizeof(unsigned char) * 3));
-  assignXPMdisplayRegion(img, window.windowLeft, window.windowTop, window.windowRight, window.windowBottom);
+  assignXPMdisplayRegion(img, viewport.windowLeft, viewport.windowTop, viewport.windowRight,   viewport.windowBottom);
   assignXPMColorTable(img, clrTable, sizeof(clrTable)/(sizeof(unsigned char) * 3));
 
   printf("Loading OBJ and VW data ...\n");
   fileInputData = loadOBJFile(fileOBJInput);
   vwSett = loadVWFile(fileVWInput);
-  /* TODO: add clipping and rendering functions */
-
+  window.windowTop = vwSett.UVMAXy;
+  window.windowBottom = vwSett.UVMINy;
+  window.windowLeft = vwSett.UVMINx;
+  window.windowRight = vwSett.UVMAXx;
+  
+  printf("3D to 2D projecting data ...\n");
+  project(img, vwSett, fileInputData, window, viewport);
   printf("Outputting data to XPM file...\n");
   saveXPMtofile(img, xpmOut);
 

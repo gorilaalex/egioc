@@ -170,7 +170,7 @@ bresenhamX (XPM *canvas, PlanePoint q, PlanePoint r, int symmetry, unsigned shor
     y = q.y;
     for (x = q.x; x <= r.x; x++)
     {
-      putXPMpixel(canvas, x, canvas->height - y, clrIndex);
+      putXPMpixel(canvas, x, canvas->height - y - 1, clrIndex);
         if (D <= 0) D += 2 * dy;
         else
         {
@@ -194,7 +194,7 @@ bresenhamY (XPM *canvas, PlanePoint q, PlanePoint r, int symmetry, unsigned shor
     x = q.x;
     for (y = q.y; y <= r.y; y++)
     {
-        putXPMpixel(canvas, x, canvas->height - y, clrIndex);
+        putXPMpixel(canvas, x, canvas->height - y - 1, clrIndex);
         if (D <= 0) D += 2 * dx;
         else
         {
@@ -271,8 +271,87 @@ drawSimplePoly(XPM *canvas, struct PlanePolygon *poly, unsigned short colorIndex
   if(NULL != poly) {
 	ptn = poly;
   do {
-    drawBresenhamLine(canvas, ptn->P, ptn->next->P, colorIndex);
+    renderLine(canvas, ptn->P, ptn->next->P, colorIndex);
     ptn = ptn->next;
   } while(poly != ptn);
+  }
+}
+
+static unsigned char
+getRegionCode(XPM *canvas, PlanePoint *pt)
+{
+    char code = 0;
+    
+    if(pt->y > canvas->displayRegion.windowTop) code |= BIT3IS1;
+    if(pt->y < canvas->displayRegion.windowBottom) code |= BIT2IS1;
+    if(pt->x > canvas->displayRegion.windowRight) code |= BIT1IS1;
+    if(pt->x < canvas->displayRegion.windowLeft) code |= BIT0IS1;
+    
+    return code;
+}
+
+static void
+trimLineToRegion(XPM *canvas, PlanePoint *start, PlanePoint *end, unsigned char codeStart, unsigned char codeEnd)
+{
+    int code, newX, newY;
+
+    if(codeStart == 0) code = codeEnd;
+    else code = codeStart;
+
+    if(code & BIT0IS1)
+      {
+	newY = (*start).y + ((*end).y - (*start).y) * (canvas->displayRegion.windowLeft - (*start).x) / ((*end).x - (*start).x);
+	newX = canvas->displayRegion.windowLeft;
+      }
+    else if(code & BIT1IS1)
+      {
+	newY = (*start).y + ((*end).y - (*start).y) * (canvas->displayRegion.windowRight - (*start).x) / ((*end).x - (*start).x);
+	newX = canvas->displayRegion.windowRight;
+      }
+    else if(code & BIT2IS1)
+      {
+	newX = (*start).x + ((*end).x - (*start).x) * (canvas->displayRegion.windowBottom - (*start).y) / ((*end).y - (*start).y);
+	newY = canvas->displayRegion.windowBottom;
+      }
+    else if(code & BIT3IS1)
+      {
+        newX = (*start).x + ((*end).x - (*start).x) * (canvas->displayRegion.windowTop - (*start).y) / ((*end).y - (*start).y);
+        newY = canvas->displayRegion.windowTop;
+      }
+    if (code == codeStart)
+      {
+        (*start).x = newX;
+        (*start).y = newY;
+      }
+    else
+      {
+        (*end).x = newX;
+        (*end).y = newY;
+      }
+}
+
+
+static int 
+cohenSutherlandFrameLine(XPM *canvas, PlanePoint *pStart, PlanePoint *pEnd)
+{
+  unsigned char codeStart = getRegionCode(canvas, pStart);
+  unsigned char codeEnd = getRegionCode(canvas,pEnd);
+
+    if((codeStart | codeEnd) == 0) return COMPLETELYIN;
+    if((codeStart & codeEnd) != 0) return COMPLETELYOUT;
+    trimLineToRegion(canvas, pStart, pEnd, codeStart, codeEnd);
+
+    return cohenSutherlandFrameLine(canvas, pStart, pEnd);
+}
+
+void
+renderLine(XPM *canvas, PlanePoint ptStart, PlanePoint ptEnd, unsigned short colorIndex) {
+  DBG("Original Line := start{x:%4f y:%4f}, end{x:%4f y:%4f}\n", ptStart.x, ptStart.y, ptEnd.x, ptEnd.y);
+  if(cohenSutherlandFrameLine(canvas, &ptStart, &ptEnd) == 1){
+    DBG("Trimed Line := start{x:%4f y:%4f}, end{x:%4f y:%4f}\n", ptStart.x, ptStart.y, ptEnd.x, ptEnd.y);
+    drawBresenhamLine(canvas, ptStart, ptEnd, colorIndex);
+  }
+  else{
+  	DBG("*** Line was totally outside the canvas.\n");
   }
 }

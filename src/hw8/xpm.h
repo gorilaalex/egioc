@@ -7,6 +7,14 @@
 
 #include "datatypes.h"
 
+#define BIT0IS1 1
+#define BIT1IS1 2
+#define BIT2IS1 4
+#define BIT3IS1 8
+
+#define COMPLETELYIN 1
+#define COMPLETELYOUT 0
+
 /* Initialize a XPM structure with custom
  * width, height, characters/pixel and number of colors
  */
@@ -49,5 +57,8 @@ drawBresenhamLine(XPM *canvas, PlanePoint pStart, PlanePoint pEnd, unsigned shor
 
 void
 drawSimplePoly(XPM *canvas, struct PlanePolygon *poly, unsigned short colorIndex);
+
+extern void
+renderLine(XPM *canvas, PlanePoint ptStart, PlanePoint ptEnd, unsigned short colorIndex);
 
 #endif // XPM_H_INCLUDED
